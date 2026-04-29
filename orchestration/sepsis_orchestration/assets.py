@@ -1,4 +1,7 @@
 from pathlib import Path
+import json
+import os
+import urllib.request
 
 from dagster import AssetExecutionContext, ResourceParam, asset
 from dagster_snowflake import SnowflakeResource
@@ -104,5 +107,70 @@ def gold_fact_sofa_lab_refresh(
     sql_file = REPO_ROOT / "transformation/sql/02_gold/01_sofa_lab_fact.sql"
     _run_sql_file(context, snowflake, sql_file)
     return "gold_fact_sofa_lab_refresh completed"
+
+
+@asset(
+    group_name="incremental_pipeline",
+    deps=[gold_fact_sofa_lab_refresh],
+)
+def sepsis_slack_alerts(
+    context: AssetExecutionContext, snowflake: ResourceParam[SnowflakeResource]
+) -> str:
+    """Send Slack alerts for high SOFA events from GOLD.FACT_SOFA_LAB."""
+    webhook = os.environ.get("SLACK_WEBHOOK_URL")
+    if not webhook:
+        context.log.warning("SLACK_WEBHOOK_URL not set; skipping Slack alerts.")
+        return "sepsis_slack_alerts skipped (no webhook)"
+
+    query = """
+    SELECT
+      f.LABEVENT_ID,
+      f.SUBJECT_ID,
+      f.SOFA_SCORE,
+      a.ADMISSION_LOCATION,
+      a.ADMISSION_TYPE,
+      f.SOFA_COMPONENT AS COMPONENT
+    FROM SEPSIS_LOGICGRAPH.GOLD.FACT_SOFA_LAB f
+    LEFT JOIN SEPSIS_LOGICGRAPH.GOLD.DIM_ADMISSION a
+      ON f.ADMISSION_SK = a.ADMISSION_SK
+    WHERE f.SOFA_SCORE >= 3
+    ORDER BY f.LABEVENT_ID DESC
+    LIMIT 50
+    """
+
+    with snowflake.get_connection() as conn:
+        cursor = conn.cursor()
+        try:
+            cursor.execute(query)
+            rows = cursor.fetchall()
+        finally:
+            cursor.close()
+
+    if not rows:
+        context.log.info("No SOFA >= 3 rows found; no Slack alerts sent.")
+        return "sepsis_slack_alerts completed (0 alerts)"
+
+    sent = 0
+    for labevent_id, subject_id, sofa_score, admission_location, admission_type, component in rows:
+        text = (
+            "Sepsis Alert: "
+            f"LABEVENT_ID={labevent_id} | "
+            f"SUBJECT_ID={subject_id} | "
+            f"SOFA_SCORE={sofa_score} | "
+            f"COMPONENT={component} | "
+            f"ADMISSION_TYPE={admission_type} | "
+            f"ADMISSION_LOCATION={admission_location}"
+        )
+        payload = {"text": text}
+        req = urllib.request.Request(
+            webhook,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        urllib.request.urlopen(req).read().decode()
+        sent += 1
+
+    context.log.info(f"Sent {sent} Slack sepsis alerts.")
+    return f"sepsis_slack_alerts completed ({sent} alerts)"
 
 
