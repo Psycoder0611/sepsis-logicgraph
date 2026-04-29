@@ -1,0 +1,5 @@
+dagster
+dagster-webserver
+dagster-snowflake
+snowflake-connector-python
+python-dotenv

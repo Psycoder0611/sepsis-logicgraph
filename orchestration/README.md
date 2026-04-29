@@ -38,6 +38,7 @@ and verify logs from:
 - `gold_dim_stay_refresh`
 - `gold_dim_lab_component_refresh`
 - `gold_fact_sofa_lab_refresh`
+- `sepsis_slack_alerts`
 
 `sepsis_pipeline_job` starts from Silver and reads from existing
 `BRONZE.LABEVENTS_SOFA`.
@@ -56,6 +57,8 @@ to Bronze COPY behavior.
   - `transformation/sql/02_gold/06_dim_stay.sql` (from cohort, one row per `STAY_ID`)
   - `transformation/sql/02_gold/07_dim_lab_component.sql` (from `SILVER.LABEVENTS_SOFA_CLEAN`)
   - `transformation/sql/02_gold/01_sofa_lab_fact.sql` builds `GOLD.FACT_SOFA_LAB` with surrogate keys joined to the dims above
+- Slack alerts are sent by `sepsis_slack_alerts` for `SOFA_SCORE >= 3` rows from
+  `GOLD.FACT_SOFA_LAB` when `SLACK_WEBHOOK_URL` is set.
 - This starter intentionally keeps SQL simple; you can later replace transform
   steps with dbt assets.
 - Slack integration and Elasticsearch/Kibana logging can be added on top of

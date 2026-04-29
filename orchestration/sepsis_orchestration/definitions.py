@@ -7,6 +7,7 @@ from sepsis_orchestration.assets import (
     gold_dim_patient_refresh,
     gold_dim_stay_refresh,
     gold_fact_sofa_lab_refresh,
+    sepsis_slack_alerts,
     silver_labevents_sofa_incremental_merge,
 )
 from sepsis_orchestration.resources import snowflake_resource
@@ -20,6 +21,7 @@ sepsis_pipeline_job = define_asset_job(
         gold_dim_stay_refresh,
         gold_dim_lab_component_refresh,
         gold_fact_sofa_lab_refresh,
+        sepsis_slack_alerts,
     ],
 )
 
@@ -37,6 +39,7 @@ defs = Definitions(
         gold_dim_stay_refresh,
         gold_dim_lab_component_refresh,
         gold_fact_sofa_lab_refresh,
+        sepsis_slack_alerts,
     ],
     jobs=[sepsis_pipeline_job],
     schedules=[sepsis_pipeline_schedule],
