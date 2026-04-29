@@ -116,7 +116,7 @@ def gold_fact_sofa_lab_refresh(
 def sepsis_slack_alerts(
     context: AssetExecutionContext, snowflake: ResourceParam[SnowflakeResource]
 ) -> str:
-    """Send Slack alerts for high SOFA events from GOLD.FACT_SOFA_LAB."""
+    """Send Slack alerts for SOFA_SCORE >= 2 events from GOLD.FACT_SOFA_LAB."""
     webhook = os.environ.get("SLACK_WEBHOOK_URL")
     if not webhook:
         context.log.warning("SLACK_WEBHOOK_URL not set; skipping Slack alerts.")
@@ -133,7 +133,7 @@ def sepsis_slack_alerts(
     FROM SEPSIS_LOGICGRAPH.GOLD.FACT_SOFA_LAB f
     LEFT JOIN SEPSIS_LOGICGRAPH.GOLD.DIM_ADMISSION a
       ON f.ADMISSION_SK = a.ADMISSION_SK
-    WHERE f.SOFA_SCORE >= 3
+    WHERE f.SOFA_SCORE >= 2
     ORDER BY f.LABEVENT_ID DESC
     LIMIT 50
     """
@@ -147,7 +147,7 @@ def sepsis_slack_alerts(
             cursor.close()
 
     if not rows:
-        context.log.info("No SOFA >= 3 rows found; no Slack alerts sent.")
+        context.log.info("No SOFA >= 2 rows found; no Slack alerts sent.")
         return "sepsis_slack_alerts completed (0 alerts)"
 
     sent = 0
