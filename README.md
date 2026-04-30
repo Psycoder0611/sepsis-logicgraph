@@ -22,18 +22,17 @@ the better approach for time-window medical logic.
 | Trapti Kulshrestha | Ingestion Lead |
 | Karthik Pragada | Transformation Lead |
 | Poushali Deb Purkayastha | Graph & Benchmark Lead |
-| Akanksha Shukla | Orchestration & Delivery Lead — Kafka pipeline, Kibana, Slack |
+| Akanksha Shukla | Orchestration & Delivery Lead — Dagster pipeline, Preset.io, Slack |
 
 ---
 
 ## Tech Stack
-- **Ingestion:** Logstash, Coupler.io
-- **Streaming:** Apache Kafka
+- **Ingestion:** Coupler.io
 - **Storage:** Snowflake (Bronze / Silver / Gold)
 - **Transformation:** dbt
 - **Graph DB:** Neo4j + Cypher
-- **Orchestration:** Kafka (event-driven pipeline)
-- **Monitoring:** Kibana, Slack Alerts
+- **Orchestration:** Dagster Pipeline
+- **Monitoring:** Slack Alerts, Preset.io Dashboard
 - **Data:** MIMIC-IV v3.1 (PhysioNet)
 
 ---
