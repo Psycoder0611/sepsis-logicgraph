@@ -6,7 +6,7 @@ import pandas as pd
 # ==========================================
 # 1. CREDENTIALS AND SETUP
 # ==========================================
-# Replace these with your actual Snowflake login details
+
 SF_USER = 'POUSHALI.DEBPURKAYASTHA'
 SF_PASSWORD = 'Pogoislove0220'
 SF_ACCOUNT = 'czfjtep-beb38705'
