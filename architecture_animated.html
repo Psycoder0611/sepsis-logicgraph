@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sepsis-LogicGraph Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#060b18;font-family:'Inter',sans-serif;overflow:hidden;width:100vw;height:100vh}
+#title{position:fixed;top:18px;left:50%;transform:translateX(-50%);text-align:center;z-index:10}
+#title h1{font-size:1.3rem;font-weight:900;color:#e2e8f0;letter-spacing:3px}
+#title p{font-size:.65rem;color:#334155;letter-spacing:4px;text-transform:uppercase;margin-top:3px}
+#step-info{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);font-size:.72rem;color:#475569;letter-spacing:2px;z-index:10;text-align:center}
+#restart{position:fixed;bottom:18px;right:26px;padding:7px 18px;border-radius:30px;border:1px solid #1e293b;background:transparent;color:#334155;font-size:.72rem;cursor:pointer;z-index:10;transition:all .3s}
+#restart:hover{border-color:#818cf8;color:#818cf8}
+svg{position:fixed;inset:0;z-index:1}
+.node{position:fixed;z-index:5;border-radius:12px;padding:12px 14px;min-width:125px;border:1.5px solid #131c2e;background:#0a1020;transition:all 1s cubic-bezier(.16,1,.3,1)}
+.node .n-icon{font-size:1.3rem;margin-bottom:5px;filter:grayscale(1);transition:filter 1s}
+.node .n-title{font-size:.78rem;font-weight:700;color:#1e2d45;transition:color 1s;margin-bottom:3px}
+.node .n-sub{font-size:.63rem;color:#141e30;line-height:1.45;transition:color 1s}
+.node .n-badge{display:inline-block;margin-top:6px;padding:2px 8px;border-radius:20px;font-size:.58rem;font-weight:700;background:#0a1020;color:#1e2d45;border:1px solid #131c2e;transition:all 1s}
+.node.active .n-icon{filter:grayscale(0)}
+.node-mimic.active{border-color:#3b82f6;background:rgba(59,130,246,.1);box-shadow:0 0 28px rgba(59,130,246,.35)}
+.node-mimic.active .n-title{color:#93c5fd}.node-mimic.active .n-sub{color:#60a5fa}
+.node-mimic.active .n-badge{background:rgba(59,130,246,.12);color:#93c5fd;border-color:#3b82f6}
+.node-bronze.active{border-color:#f97316;background:rgba(249,115,22,.1);box-shadow:0 0 28px rgba(249,115,22,.35)}
+.node-bronze.active .n-title{color:#fdba74}.node-bronze.active .n-sub{color:#fb923c}
+.node-bronze.active .n-badge{background:rgba(249,115,22,.12);color:#fdba74;border-color:#f97316}
+.node-silver.active{border-color:#60a5fa;background:rgba(96,165,250,.1);box-shadow:0 0 28px rgba(96,165,250,.35)}
+.node-silver.active .n-title{color:#bfdbfe}.node-silver.active .n-sub{color:#93c5fd}
+.node-silver.active .n-badge{background:rgba(96,165,250,.12);color:#bfdbfe;border-color:#60a5fa}
+.node-goldclin.active{border-color:#eab308;background:rgba(234,179,8,.1);box-shadow:0 0 28px rgba(234,179,8,.35)}
+.node-goldclin.active .n-title{color:#fde68a}.node-goldclin.active .n-sub{color:#fbbf24}
+.node-goldclin.active .n-badge{background:rgba(234,179,8,.12);color:#fde68a;border-color:#eab308}
+.node-goldan.active{border-color:#a855f7;background:rgba(168,85,247,.1);box-shadow:0 0 28px rgba(168,85,247,.35)}
+.node-goldan.active .n-title{color:#d8b4fe}.node-goldan.active .n-sub{color:#c084fc}
+.node-goldan.active .n-badge{background:rgba(168,85,247,.12);color:#d8b4fe;border-color:#a855f7}
+.node-views.active{border-color:#10b981;background:rgba(16,185,129,.1);box-shadow:0 0 28px rgba(16,185,129,.35)}
+.node-views.active .n-title{color:#6ee7b7}.node-views.active .n-sub{color:#34d399}
+.node-views.active .n-badge{background:rgba(16,185,129,.12);color:#6ee7b7;border-color:#10b981}
+.node-preset.active{border-color:#06b6d4;background:rgba(6,182,212,.1);box-shadow:0 0 28px rgba(6,182,212,.35)}
+.node-preset.active .n-title{color:#67e8f9}.node-preset.active .n-sub{color:#22d3ee}
+.node-preset.active .n-badge{background:rgba(6,182,212,.12);color:#67e8f9;border-color:#06b6d4}
+.node-dagster.active{border-color:#f59e0b;background:rgba(245,158,11,.1);box-shadow:0 0 28px rgba(245,158,11,.35)}
+.node-dagster.active .n-title{color:#fde68a}.node-dagster.active .n-sub{color:#fbbf24}
+.node-dagster.active .n-badge{background:rgba(245,158,11,.12);color:#fde68a;border-color:#f59e0b}
+.node-slack.active{border-color:#ec4899;background:rgba(236,72,153,.1);box-shadow:0 0 28px rgba(236,72,153,.35)}
+.node-slack.active .n-title{color:#f9a8d4}.node-slack.active .n-sub{color:#f472b6}
+.node-slack.active .n-badge{background:rgba(236,72,153,.12);color:#f9a8d4;border-color:#ec4899}
+.node-neo4j.active{border-color:#8b5cf6;background:rgba(139,92,246,.1);box-shadow:0 0 28px rgba(139,92,246,.35)}
+.node-neo4j.active .n-title{color:#c4b5fd}.node-neo4j.active .n-sub{color:#a78bfa}
+.node-neo4j.active .n-badge{background:rgba(139,92,246,.12);color:#c4b5fd;border-color:#8b5cf6}
+.node-coupler.active{border-color:#22c55e;background:rgba(34,197,94,.1);box-shadow:0 0 28px rgba(34,197,94,.35)}
+.node-coupler.active .n-title{color:#86efac}.node-coupler.active .n-sub{color:#4ade80}
+.node-coupler.active .n-badge{background:rgba(34,197,94,.12);color:#86efac;border-color:#22c55e}
+.pipe-label{position:fixed;font-size:.58rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#131c2e;z-index:4}
+</style>
+</head>
+<body>
+<div id="title">
+  <h1>SEPSIS-LOGICGRAPH</h1>
+  <p>End-to-End Clinical Alerting Pipeline Architecture</p>
+</div>
+<svg id="svg" width="100%" height="100%"></svg>
+<div id="step-info">Initialising...</div>
+<button id="restart" onclick="init()">↺ Restart</button>
+
+<script>
+const W=window.innerWidth, H=window.innerHeight;
+const STEP_MS=1000, LINE_MS=600;
+
+// ── NODES ──────────────────────────────────────────────────────────────
+// Layout: main pipeline top row, dagster below centre, slack/neo4j bottom
+const NODES=[
+  {id:'mimic',   cls:'node-mimic',   x:.04, y:.25, icon:'🏥', title:'MIMIC-IV v3.1',   sub:'PhysioNet · MIMIC-IV\n~19M rows · 9 tables',                  badge:'Data Source'},
+  {id:'coupler', cls:'node-coupler', x:.10, y:.48, icon:'🔗', title:'Coupler.io',      sub:'No-code CSV sync\nD_LABITEMS reference table\nScheduled connector',   badge:'Reference Sync'},
+  {id:'bronze',  cls:'node-bronze',  x:.28, y:.25, icon:'🟠', title:'BRONZE LAYER',    sub:'SnowSQL CLI · LABEVENTS\nSnowflake UI · 7 tables\nCoupler.io · D_LABITEMS', badge:'9 Raw Tables'},
+  {id:'silver',  cls:'node-silver',  x:.44, y:.25, icon:'💎', title:'SILVER LAYER',    sub:'SQL Cleaning · 7 Tables\nSELECT DISTINCT + null filter\nSOFA_COMPONENT label stamped', badge:'197K Infections'},
+  {id:'goldclin',cls:'node-goldclin',x:.60, y:.10, icon:'🏆', title:'GOLD — Clinical', sub:'SOFA_LAB_FACT\nSOFA_STAY_SUMMARY\nSEPSIS_CANDIDATES',           badge:'10,333 Candidates'},
+  {id:'goldan',  cls:'node-goldan',  x:.60, y:.40, icon:'⭐', title:'GOLD — Analytics',sub:'FACT_SOFA_LAB\nDIM_PATIENT · DIM_ADMISSION\nDIM_STAY · DIM_LAB_COMPONENT', badge:'Star Schema'},
+  {id:'views',   cls:'node-views',   x:.77, y:.25, icon:'📊', title:'VIEWS SCHEMA',   sub:'V_SEPSIS_ANALYTICS\nV_SOFA_LAB_ANALYTICS\nLive · No stored data', badge:'DirectQuery'},
+  {id:'preset',  cls:'node-preset',  x:.90, y:.25, icon:'📈', title:'Preset.io BI',   sub:'Live Dashboards\nSOFA severity · Mortality\nCare unit breakdown', badge:'Visualisation'},
+  {id:'dagster', cls:'node-dagster', x:.38, y:.75, icon:'⚙️', title:'DAGSTER',        sub:'Orchestrates full pipeline\nBronze → Silver → Gold → Views\n15-min cron · Asset graph', badge:'Orchestrator'},
+  {id:'slack',   cls:'node-slack',   x:.68, y:.75, icon:'🔔', title:'SLACK ALERTS',   sub:'Webhook · SOFA ≥ 2\ninfection_flag = 1\nReal-time patient alerts',  badge:'Alerting'},
+  {id:'neo4j',   cls:'node-neo4j',   x:.08, y:.75, icon:'🔮', title:'NEO4J BENCHMARK',sub:'4 node types · 3 rel types\nSepsis-3 Cypher traversal\n491K nodes · 426K rels', badge:'8× faster'},
+];
+
+// ── STEP SEQUENCE ──────────────────────────────────────────────────────
+// [fromId, toId, lineColor, stepLabel, dashed]
+const STEPS=[
+  ['mimic',   'coupler', '#22c55e','MIMIC-IV → Coupler.io + SnowSQL',false],
+  ['coupler', 'bronze',  '#f97316','Data ingestion → Bronze Layer',false],
+  ['bronze',  'silver',  '#60a5fa','SQL cleaning + SOFA_COMPONENT label → Silver',false],
+  ['silver',  'goldclin','#eab308','SOFA scoring → Clinical Gold branch',false],
+  ['silver',  'goldan',  '#a855f7','Star schema build → Analytics Gold branch',false],
+  ['goldclin','views',   '#10b981','V_SEPSIS_ANALYTICS live view',false],
+  ['goldan',  'views',   '#10b981','V_SOFA_LAB_ANALYTICS live view',false],
+  ['views',   'preset',  '#06b6d4','Preset.io DirectQuery connection',false],
+  // Dagster activates and shows orchestration span
+  ['dagster', 'bronze',  '#f59e0b','Dagster orchestrates Bronze ingestion',true],
+  ['dagster', 'silver',  '#f59e0b','Dagster orchestrates Silver transformation',true],
+  ['dagster', 'goldclin','#f59e0b','Dagster orchestrates Gold clinical refresh',true, -0.1],
+  ['dagster', 'goldan',  '#f59e0b','Dagster orchestrates Gold analytics refresh',true],
+  // Slack from Dagster
+  ['dagster', 'slack',   '#ec4899','Slack alert: SOFA ≥ 2 → webhook fired',false],
+  // Neo4j benchmark from Silver export
+  ['silver',  'neo4j',   '#8b5cf6','CSV export → Neo4j LOAD CSV benchmark',false],
+];
+
+// ── State ───────────────────────────────────────────────────────────────
+let nodeEls={}, svgEl, stepInfoEl, timer=null, stepIdx=0, lines=[];
+let activated=new Set();
+
+function nodeCenter(id){
+  const r=nodeEls[id].getBoundingClientRect();
+  return{x:r.left+r.width/2, y:r.top+r.height/2, w:r.width/2, h:r.height/2};
+}
+function edgePt(c,tx,ty){
+  const dx=tx-c.x, dy=ty-c.y;
+  const s=Math.min(c.w/(Math.abs(dx)||1), c.h/(Math.abs(dy)||1));
+  return{x:c.x+dx*s, y:c.y+dy*s};
+}
+
+function drawLine(fromId,toId,color,dashed,onDone,arc=0.18){
+  const fc=nodeCenter(fromId), tc=nodeCenter(toId);
+  const p1=edgePt(fc,tc.x,tc.y), p2=edgePt(tc,fc.x,fc.y);
+  const mx=(p1.x+p2.x)/2, my=(p1.y+p2.y)/2;
+  const perp={x:-(p2.y-p1.y)*arc,y:(p2.x-p1.x)*arc};
+  const cx=mx+perp.x, cy=my+perp.y;
+  const d=`M${p1.x},${p1.y} Q${cx},${cy} ${p2.x},${p2.y}`;
+
+  // Permanent faded line
+  const perm=makePath(d,color+'35',dashed?'5 5':'none',1.8);
+  svgEl.appendChild(perm); lines.push(perm);
+
+  // Animated travel line
+  const travel=makePath(d,color,dashed?'8 4':'none',2.2);
+  svgEl.appendChild(travel); lines.push(travel);
+  const len=travel.getTotalLength();
+  travel.setAttribute('stroke-dasharray',len);
+  travel.setAttribute('stroke-dashoffset',len);
+
+  // Glowing dot
+  const dot=document.createElementNS('http://www.w3.org/2000/svg','circle');
+  dot.setAttribute('r','5'); dot.setAttribute('fill',color);
+  dot.setAttribute('filter','url(#glow)');
+  svgEl.appendChild(dot); lines.push(dot);
+
+  const t0=performance.now();
+  function frame(now){
+    const t=Math.min((now-t0)/LINE_MS,1);
+    const e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+    travel.setAttribute('stroke-dashoffset',len*(1-e));
+    const pt=travel.getPointAtLength(len*e);
+    dot.setAttribute('cx',pt.x); dot.setAttribute('cy',pt.y);
+    if(t<1){requestAnimationFrame(frame);}
+    else{svgEl.removeChild(dot);if(onDone)onDone();}
+  }
+  requestAnimationFrame(frame);
+}
+
+function makePath(d,stroke,dasharray,width){
+  const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+  p.setAttribute('d',d); p.setAttribute('stroke',stroke);
+  p.setAttribute('stroke-width',width); p.setAttribute('fill','none');
+  p.setAttribute('stroke-linecap','round');
+  if(dasharray!=='none') p.setAttribute('stroke-dasharray',dasharray);
+  return p;
+}
+
+function activate(id){
+  if(!activated.has(id)){
+    nodeEls[id].classList.add('active');
+    activated.add(id);
+  }
+}
+
+function runStep(){
+  if(stepIdx>=STEPS.length){
+    stepInfoEl.textContent='✅ Pipeline fully active — all stages connected';
+    return;
+  }
+  const [fid,tid,color,label,dashed,arc=0.18]=STEPS[stepIdx];
+  stepInfoEl.textContent=`Step ${stepIdx+1}/${STEPS.length} — ${label}`;
+  // Activate Dagster when its steps begin
+  if(fid==='dagster') activate('dagster');
+  drawLine(fid,tid,color,dashed,()=>{
+    activate(tid);
+    stepIdx++;
+    timer=setTimeout(runStep, STEP_MS-LINE_MS);
+  }, arc);
+}
+
+function createNode(nd){
+  const el=document.createElement('div');
+  el.className='node '+nd.cls; el.id='nd-'+nd.id;
+  el.style.left=Math.round(nd.x*W)+'px';
+  el.style.top=Math.round(nd.y*H)+'px';
+  const subHtml=nd.sub.split('\n').map(l=>`<span>${l}</span>`).join('<br>');
+  el.innerHTML=`<div class="n-icon">${nd.icon}</div>
+<div class="n-title">${nd.title}</div>
+<div class="n-sub">${subHtml}</div>
+<div class="n-badge">${nd.badge}</div>`;
+  document.body.appendChild(el);
+  nodeEls[nd.id]=el;
+}
+
+function addLabel(text,x,y){
+  const el=document.createElement('div');
+  el.className='pipe-label';
+  el.style.left=Math.round(x*W)+'px';
+  el.style.top=Math.round(y*H)+'px';
+  el.textContent=text;
+  document.body.appendChild(el);
+}
+
+function clearAll(){
+  document.querySelectorAll('.node,.pipe-label').forEach(e=>e.remove());
+  lines.forEach(l=>{try{svgEl.removeChild(l)}catch(e){}});
+  lines=[]; nodeEls={}; activated=new Set();
+  clearTimeout(timer); stepIdx=0;
+}
+
+function init(){
+  clearAll();
+  NODES.forEach(nd=>createNode(nd));
+  addLabel('DATA PIPELINE — MIMIC-IV → Coupler.io + SnowSQL → Bronze → Silver → Gold → Views → Preset.io',.04,.06);
+  addLabel('ORCHESTRATION — Dagster manages full pipeline · Slack alerting',.36,.63);
+  addLabel('BENCHMARK — Neo4j vs Snowflake SQL',.04,.63);
+  // Activate MIMIC-IV first
+  setTimeout(()=>{
+    activate('mimic');
+    stepInfoEl.textContent='Pipeline starting — MIMIC-IV data source active';
+    timer=setTimeout(runStep,STEP_MS);
+  },500);
+}
+
+window.addEventListener('load',()=>{
+  svgEl=document.getElementById('svg');
+  stepInfoEl=document.getElementById('step-info');
+  // SVG defs
+  const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
+  defs.innerHTML=`<filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+    <feGaussianBlur stdDeviation="4" result="b"/>
+    <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+  </filter>`;
+  svgEl.appendChild(defs);
+  init();
+});
+</script>
+</body>
+</html>
